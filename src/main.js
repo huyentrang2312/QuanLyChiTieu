@@ -2269,3 +2269,28 @@ function renderDashboard() {
 window.getReportToken = async function() {
   return await auth.currentUser.getIdToken();
 };
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, storage } from "./services/firebase.js"; // Đường dẫn đến file khởi tạo firebase của dự án bạn
+
+// Hàm chỉ nhận vào file ảnh và trả về đường dẫn (URL) sau khi đã lưu lên Storage
+async function uploadReceiptToStorage(file) {
+  if (!file) return "";
+
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("Người dùng chưa đăng nhập!");
+  }
+
+  // Tạo tên file độc đáo bằng thời gian hiện tại để tránh bị trùng lặp
+  const fileName = `${Date.now()}_${file.name}`;
+  
+  // Tạo đường dẫn khớp với Rules của bạn: users/{userId}/receipts/{fileName}
+  const storageRef = ref(storage, `users/${user.uid}/receipts/${fileName}`);
+
+  // Tải file lên Firebase Storage
+  const snapshot = await uploadBytes(storageRef, file);
+  
+  // Lấy và trả về đường dẫn công khai của ảnh
+  const downloadURL = await getDownloadURL(snapshot.ref);
+  return downloadURL;
+}
